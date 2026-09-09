@@ -1,0 +1,32 @@
+name: Test publish-env disabled
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: MY_KEY
+          value: "hello world"
+          publish-env: "false"
+      - name: Assert slug output is still set
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug }}
+        run: |
+          echo "actual slug: $ACTUAL"
+          if [ "$ACTUAL" != "hello-world" ]; then
+            echo "FAIL: expected 'hello-world' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert env var is NOT published
+        run: |
+          echo "MY_KEY_SLUG env: '$MY_KEY_SLUG'"
+          if [ -n "$MY_KEY_SLUG" ]; then
+            echo "FAIL: MY_KEY_SLUG should not be set when publish-env=false, got '$MY_KEY_SLUG'"
+            exit 1
+          fi
+          echo "PASS: env var not published as expected"

@@ -1,0 +1,55 @@
+name: Test slug vs slug-url dot handling
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: VERSION
+          value: "v1.2.3-beta.1"
+      - name: Assert slug preserves dots
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug }}
+        run: |
+          echo "actual slug: $ACTUAL"
+          # slug allows dots (a-zA-Z0-9._-), so dots should be preserved
+          if [ "$ACTUAL" != "v1.2.3-beta.1" ]; then
+            echo "FAIL: expected 'v1.2.3-beta.1' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert slug-url replaces dots with hyphens
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-url }}
+        run: |
+          echo "actual slug-url: $ACTUAL"
+          # slug-url only allows a-zA-Z0-9-, so dots become hyphens
+          if [ "$ACTUAL" != "v1-2-3-beta-1" ]; then
+            echo "FAIL: expected 'v1-2-3-beta-1' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert slug-cs preserves case and dots
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-cs }}
+        run: |
+          echo "actual slug-cs: $ACTUAL"
+          if [ "$ACTUAL" != "v1.2.3-beta.1" ]; then
+            echo "FAIL: expected 'v1.2.3-beta.1' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert slug-url-cs replaces dots but preserves case
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-url-cs }}
+        run: |
+          echo "actual slug-url-cs: $ACTUAL"
+          if [ "$ACTUAL" != "v1-2-3-beta-1" ]; then
+            echo "FAIL: expected 'v1-2-3-beta-1' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"

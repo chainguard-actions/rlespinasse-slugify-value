@@ -1,0 +1,63 @@
+name: Test basic slugification
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: MY_VALUE
+          value: "Hello World! This is a Test"
+      - name: Assert value output
+        env:
+          ACTUAL: ${{ steps.action.outputs.value }}
+        run: |
+          echo "actual value: $ACTUAL"
+          if [ "$ACTUAL" != "Hello World! This is a Test" ]; then
+            echo "FAIL: expected 'Hello World! This is a Test' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert slug output (lowercase, special chars replaced)
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug }}
+        run: |
+          echo "actual slug: $ACTUAL"
+          if [ "$ACTUAL" != "hello-world-this-is-a-test" ]; then
+            echo "FAIL: expected 'hello-world-this-is-a-test' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert slug-cs output (case-sensitive)
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-cs }}
+        run: |
+          echo "actual slug-cs: $ACTUAL"
+          if [ "$ACTUAL" != "Hello-World-This-is-a-Test" ]; then
+            echo "FAIL: expected 'Hello-World-This-is-a-Test' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert slug-url output (lowercase, dots replaced)
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-url }}
+        run: |
+          echo "actual slug-url: $ACTUAL"
+          if [ "$ACTUAL" != "hello-world-this-is-a-test" ]; then
+            echo "FAIL: expected 'hello-world-this-is-a-test' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert slug-url-cs output (case-sensitive, dots replaced)
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-url-cs }}
+        run: |
+          echo "actual slug-url-cs: $ACTUAL"
+          if [ "$ACTUAL" != "Hello-World-This-is-a-Test" ]; then
+            echo "FAIL: expected 'Hello-World-This-is-a-Test' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"

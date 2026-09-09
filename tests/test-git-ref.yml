@@ -1,0 +1,56 @@
+name: Test git ref slugification
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: GITHUB_REF
+          value: "refs/heads/feature/my-cool-feature"
+      - name: Assert value output
+        env:
+          ACTUAL: ${{ steps.action.outputs.value }}
+        run: |
+          echo "actual value: $ACTUAL"
+          if [ "$ACTUAL" != "refs/heads/feature/my-cool-feature" ]; then
+            echo "FAIL: expected 'refs/heads/feature/my-cool-feature' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert slug strips refs prefix and lowercases
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug }}
+        run: |
+          echo "actual slug: $ACTUAL"
+          # refs/heads/ prefix should be stripped, slashes become hyphens
+          if [ "$ACTUAL" != "feature-my-cool-feature" ]; then
+            echo "FAIL: expected 'feature-my-cool-feature' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert slug-url strips refs prefix
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-url }}
+        run: |
+          echo "actual slug-url: $ACTUAL"
+          if [ "$ACTUAL" != "feature-my-cool-feature" ]; then
+            echo "FAIL: expected 'feature-my-cool-feature' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert env var is published
+        run: |
+          echo "GITHUB_REF env: $GITHUB_REF_SLUG"
+          if [ -z "$GITHUB_REF_SLUG" ]; then
+            echo "FAIL: GITHUB_REF_SLUG env var was not published"
+            exit 1
+          fi
+          if [ "$GITHUB_REF_SLUG" != "feature-my-cool-feature" ]; then
+            echo "FAIL: expected GITHUB_REF_SLUG='feature-my-cool-feature' but got '$GITHUB_REF_SLUG'"
+            exit 1
+          fi
+          echo "PASS"

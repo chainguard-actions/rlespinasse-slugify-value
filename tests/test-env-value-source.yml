@@ -1,0 +1,47 @@
+name: Test value from environment variable
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      MY_BRANCH: "feature/awesome-feature"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: MY_BRANCH
+          # No 'value' input — the action reads from the MY_BRANCH env var
+      - name: Assert value output matches env var
+        env:
+          ACTUAL: ${{ steps.action.outputs.value }}
+        run: |
+          echo "actual value: $ACTUAL"
+          if [ "$ACTUAL" != "feature/awesome-feature" ]; then
+            echo "FAIL: expected 'feature/awesome-feature' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert slug strips slashes and lowercases
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug }}
+        run: |
+          echo "actual slug: $ACTUAL"
+          if [ "$ACTUAL" != "feature-awesome-feature" ]; then
+            echo "FAIL: expected 'feature-awesome-feature' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert env var MY_BRANCH_SLUG is published
+        run: |
+          echo "MY_BRANCH_SLUG: $MY_BRANCH_SLUG"
+          if [ -z "$MY_BRANCH_SLUG" ]; then
+            echo "FAIL: MY_BRANCH_SLUG env var was not published"
+            exit 1
+          fi
+          if [ "$MY_BRANCH_SLUG" != "feature-awesome-feature" ]; then
+            echo "FAIL: expected MY_BRANCH_SLUG='feature-awesome-feature' but got '$MY_BRANCH_SLUG'"
+            exit 1
+          fi
+          echo "PASS"

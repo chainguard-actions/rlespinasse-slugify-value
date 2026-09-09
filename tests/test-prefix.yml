@@ -1,0 +1,45 @@
+name: Test prefix for environment variable names
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: BRANCH
+          value: "feature/my-branch"
+          prefix: "MY_"
+      - name: Assert slug output
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug }}
+        run: |
+          echo "actual slug: $ACTUAL"
+          if [ "$ACTUAL" != "feature-my-branch" ]; then
+            echo "FAIL: expected 'feature-my-branch' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert prefixed env var is published
+        run: |
+          echo "MY_BRANCH_SLUG env: $MY_BRANCH_SLUG"
+          if [ -z "$MY_BRANCH_SLUG" ]; then
+            echo "FAIL: MY_BRANCH_SLUG env var was not published"
+            exit 1
+          fi
+          if [ "$MY_BRANCH_SLUG" != "feature-my-branch" ]; then
+            echo "FAIL: expected MY_BRANCH_SLUG='feature-my-branch' but got '$MY_BRANCH_SLUG'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert non-prefixed env var does NOT exist
+        run: |
+          echo "BRANCH_SLUG env: '$BRANCH_SLUG'"
+          # Without prefix, BRANCH_SLUG should not be set (MY_BRANCH_SLUG should be set instead)
+          if [ -n "$BRANCH_SLUG" ]; then
+            echo "FAIL: BRANCH_SLUG should not be set when prefix is 'MY_', got '$BRANCH_SLUG'"
+            exit 1
+          fi
+          echo "PASS"
