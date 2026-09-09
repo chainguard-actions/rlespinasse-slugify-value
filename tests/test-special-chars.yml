@@ -1,0 +1,44 @@
+name: Test special characters slugification
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: SPECIAL_VALUE
+          value: "Hello, World! @#$%"
+      - name: Assert slug replaces special chars with hyphens
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug }}
+        run: |
+          echo "actual slug: $ACTUAL"
+          # Special chars replaced with hyphens, leading/trailing hyphens removed
+          if [ "$ACTUAL" != "hello-world" ]; then
+            echo "FAIL: expected 'hello-world' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: special chars slugified correctly"
+      - name: Assert slug-url replaces special chars with hyphens
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-url }}
+        run: |
+          echo "actual slug-url: $ACTUAL"
+          if [ "$ACTUAL" != "hello-world" ]; then
+            echo "FAIL: expected 'hello-world' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: slug-url special chars slugified correctly"
+      - name: Assert slug-cs preserves case but replaces special chars
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-cs }}
+        run: |
+          echo "actual slug-cs: $ACTUAL"
+          if [ "$ACTUAL" != "Hello-World" ]; then
+            echo "FAIL: expected 'Hello-World' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: slug-cs special chars slugified correctly with case preserved"

@@ -1,0 +1,76 @@
+name: Test basic slugification
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: MY_VALUE
+          value: "Hello World"
+      - name: Assert value output
+        env:
+          ACTUAL: ${{ steps.action.outputs.value }}
+        run: |
+          echo "actual value: $ACTUAL"
+          if [ "$ACTUAL" != "Hello World" ]; then
+            echo "FAIL: expected 'Hello World' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: value output correct"
+      - name: Assert slug output (lowercase, spaces replaced)
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug }}
+        run: |
+          echo "actual slug: $ACTUAL"
+          if [ "$ACTUAL" != "hello-world" ]; then
+            echo "FAIL: expected 'hello-world' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: slug output correct"
+      - name: Assert slug-cs output (case-sensitive)
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-cs }}
+        run: |
+          echo "actual slug-cs: $ACTUAL"
+          if [ "$ACTUAL" != "Hello-World" ]; then
+            echo "FAIL: expected 'Hello-World' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: slug-cs output correct"
+      - name: Assert slug-url output
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-url }}
+        run: |
+          echo "actual slug-url: $ACTUAL"
+          if [ "$ACTUAL" != "hello-world" ]; then
+            echo "FAIL: expected 'hello-world' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: slug-url output correct"
+      - name: Assert slug-url-cs output
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-url-cs }}
+        run: |
+          echo "actual slug-url-cs: $ACTUAL"
+          if [ "$ACTUAL" != "Hello-World" ]; then
+            echo "FAIL: expected 'Hello-World' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: slug-url-cs output correct"
+      - name: Assert env vars published
+        run: |
+          echo "MY_VALUE=$MY_VALUE"
+          echo "MY_VALUE_SLUG=$MY_VALUE_SLUG"
+          if [ "$MY_VALUE" != "Hello World" ]; then
+            echo "FAIL: expected MY_VALUE='Hello World' but got '$MY_VALUE'"
+            exit 1
+          fi
+          if [ "$MY_VALUE_SLUG" != "hello-world" ]; then
+            echo "FAIL: expected MY_VALUE_SLUG='hello-world' but got '$MY_VALUE_SLUG'"
+            exit 1
+          fi
+          echo "PASS: env vars published correctly"

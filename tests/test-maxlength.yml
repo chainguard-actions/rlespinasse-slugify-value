@@ -1,0 +1,43 @@
+name: Test slug max length truncation
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: LONG_VALUE
+          value: "this-is-a-very-long-string-that-should-be-truncated-at-some-point"
+          slug-maxlength: "20"
+      - name: Assert slug is truncated to max length
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug }}
+        run: |
+          echo "actual slug: $ACTUAL"
+          LEN=${#ACTUAL}
+          echo "length: $LEN"
+          if [ "$LEN" -gt 20 ]; then
+            echo "FAIL: slug length $LEN exceeds max length 20"
+            exit 1
+          fi
+          # Should start with the beginning of the slugified value
+          if [[ "$ACTUAL" != "this-is-a-very-long-"* ]] && [[ "$ACTUAL" != "this-is-a-very-long" ]]; then
+            echo "FAIL: slug '$ACTUAL' does not start with expected prefix"
+            exit 1
+          fi
+          echo "PASS: slug truncated correctly to $LEN chars"
+      - name: Assert slug-url is also truncated
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-url }}
+        run: |
+          echo "actual slug-url: $ACTUAL"
+          LEN=${#ACTUAL}
+          echo "length: $LEN"
+          if [ "$LEN" -gt 20 ]; then
+            echo "FAIL: slug-url length $LEN exceeds max length 20"
+            exit 1
+          fi
+          echo "PASS: slug-url truncated correctly to $LEN chars"

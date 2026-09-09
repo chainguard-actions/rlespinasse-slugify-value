@@ -1,0 +1,35 @@
+name: Test slug vs slug-url difference with dots and underscores
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: VERSION_VALUE
+          value: "v1.2.3_release"
+      - name: Assert slug preserves dots and underscores
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug }}
+        run: |
+          echo "actual slug: $ACTUAL"
+          # slug allows [a-zA-Z0-9._-], so dots and underscores are preserved
+          if [ "$ACTUAL" != "v1.2.3_release" ]; then
+            echo "FAIL: expected 'v1.2.3_release' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: slug preserves dots and underscores"
+      - name: Assert slug-url replaces dots and underscores with hyphens
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug-url }}
+        run: |
+          echo "actual slug-url: $ACTUAL"
+          # slug-url only allows [a-zA-Z0-9-], so dots and underscores become hyphens
+          if [ "$ACTUAL" != "v1-2-3-release" ]; then
+            echo "FAIL: expected 'v1-2-3-release' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: slug-url replaces dots and underscores with hyphens"

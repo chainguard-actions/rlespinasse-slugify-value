@@ -1,0 +1,39 @@
+name: Test publish-env disabled
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: MY_VALUE
+          value: "Hello World"
+          publish-env: "false"
+      - name: Assert outputs are still set
+        env:
+          ACTUAL_SLUG: ${{ steps.action.outputs.slug }}
+          ACTUAL_VALUE: ${{ steps.action.outputs.value }}
+        run: |
+          echo "actual slug: $ACTUAL_SLUG"
+          echo "actual value: $ACTUAL_VALUE"
+          if [ "$ACTUAL_SLUG" != "hello-world" ]; then
+            echo "FAIL: expected slug 'hello-world' but got '$ACTUAL_SLUG'"
+            exit 1
+          fi
+          if [ "$ACTUAL_VALUE" != "Hello World" ]; then
+            echo "FAIL: expected value 'Hello World' but got '$ACTUAL_VALUE'"
+            exit 1
+          fi
+          echo "PASS: outputs are set correctly"
+      - name: Assert env vars are NOT published
+        run: |
+          echo "MY_VALUE=$MY_VALUE"
+          echo "MY_VALUE_SLUG=$MY_VALUE_SLUG"
+          if [ -n "$MY_VALUE_SLUG" ]; then
+            echo "FAIL: expected MY_VALUE_SLUG to be unset but got '$MY_VALUE_SLUG'"
+            exit 1
+          fi
+          echo "PASS: env vars not published when publish-env=false"

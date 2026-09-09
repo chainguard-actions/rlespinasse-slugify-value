@@ -1,0 +1,253 @@
+name: Slugify Value
+on:
+  push:
+    branches:
+      - v1.x
+  pull_request:
+
+permissions: {}
+
+jobs:
+  os-testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3
+
+      # Test 1
+      - name: Slugify key only
+        id: slugify-key-only
+        uses: ./
+        with:
+          key: KEY_ONLY
+        env:
+          KEY_ONLY: "refs/head/$-Key_Only.test--value-%-+"
+      - name: Validate // Slugify key only
+        env:
+          ENV_KEY_ONLY: ${{ env.KEY_ONLY }}
+          ENV_KEY_ONLY_SLUG: ${{ env.KEY_ONLY_SLUG }}
+          ENV_KEY_ONLY_SLUG_CS: ${{ env.KEY_ONLY_SLUG_CS }}
+          ENV_KEY_ONLY_SLUG_URL: ${{ env.KEY_ONLY_SLUG_URL }}
+          ENV_KEY_ONLY_SLUG_URL_CS: ${{ env.KEY_ONLY_SLUG_URL_CS }}
+          OUT_VALUE: ${{ steps.slugify-key-only.outputs.value }}
+          OUT_SLUG: ${{ steps.slugify-key-only.outputs.slug }}
+          OUT_SLUG_CS: ${{ steps.slugify-key-only.outputs.slug-cs }}
+          OUT_SLUG_URL: ${{ steps.slugify-key-only.outputs.slug-url }}
+          OUT_SLUG_URL_CS: ${{ steps.slugify-key-only.outputs.slug-url-cs }}
+        run: |
+          [[ "$ENV_KEY_ONLY" == "refs/head/$-Key_Only.test--value-%-+" ]]
+          [[ "$ENV_KEY_ONLY_SLUG" == "key_only.test--value" ]]
+          [[ "$ENV_KEY_ONLY_SLUG_CS" == "Key_Only.test--value" ]]
+          [[ "$ENV_KEY_ONLY_SLUG_URL" == "key-only-test--value" ]]
+          [[ "$ENV_KEY_ONLY_SLUG_URL_CS" == "Key-Only-test--value" ]]
+          [[ "$ENV_KEY_ONLY" == "$OUT_VALUE" ]]
+          [[ "$ENV_KEY_ONLY_SLUG" == "$OUT_SLUG" ]]
+          [[ "$ENV_KEY_ONLY_SLUG_CS" == "$OUT_SLUG_CS" ]]
+          [[ "$ENV_KEY_ONLY_SLUG_URL" == "$OUT_SLUG_URL" ]]
+          [[ "$ENV_KEY_ONLY_SLUG_URL_CS" == "$OUT_SLUG_URL_CS" ]]
+        shell: bash
+
+      # Test 2
+      - name: Slugify key only with prefix
+        uses: ./
+        with:
+          key: KEY_ONLY_WITH_PREFIX
+          prefix: CI_
+        env:
+          KEY_ONLY_WITH_PREFIX: ${{ env.KEY_ONLY }}
+      - name: Validate // Slugify key only with prefix
+        env:
+          ENV_CI_KEY_ONLY_WITH_PREFIX: ${{ env.CI_KEY_ONLY_WITH_PREFIX }}
+          ENV_CI_KEY_ONLY_WITH_PREFIX_SLUG: ${{ env.CI_KEY_ONLY_WITH_PREFIX_SLUG }}
+          ENV_CI_KEY_ONLY_WITH_PREFIX_SLUG_CS: ${{ env.CI_KEY_ONLY_WITH_PREFIX_SLUG_CS }}
+          ENV_CI_KEY_ONLY_WITH_PREFIX_SLUG_URL: ${{ env.CI_KEY_ONLY_WITH_PREFIX_SLUG_URL }}
+          ENV_CI_KEY_ONLY_WITH_PREFIX_SLUG_URL_CS: ${{ env.CI_KEY_ONLY_WITH_PREFIX_SLUG_URL_CS }}
+          ENV_KEY_ONLY: ${{ env.KEY_ONLY }}
+          ENV_KEY_ONLY_SLUG: ${{ env.KEY_ONLY_SLUG }}
+          ENV_KEY_ONLY_SLUG_CS: ${{ env.KEY_ONLY_SLUG_CS }}
+          ENV_KEY_ONLY_SLUG_URL: ${{ env.KEY_ONLY_SLUG_URL }}
+          ENV_KEY_ONLY_SLUG_URL_CS: ${{ env.KEY_ONLY_SLUG_URL_CS }}
+        run: |
+          [[ "$ENV_CI_KEY_ONLY_WITH_PREFIX" == "$ENV_KEY_ONLY" ]]
+          [[ "$ENV_CI_KEY_ONLY_WITH_PREFIX_SLUG" == "$ENV_KEY_ONLY_SLUG" ]]
+          [[ "$ENV_CI_KEY_ONLY_WITH_PREFIX_SLUG_CS" == "$ENV_KEY_ONLY_SLUG_CS" ]]
+          [[ "$ENV_CI_KEY_ONLY_WITH_PREFIX_SLUG_URL" == "$ENV_KEY_ONLY_SLUG_URL" ]]
+          [[ "$ENV_CI_KEY_ONLY_WITH_PREFIX_SLUG_URL_CS" == "$ENV_KEY_ONLY_SLUG_URL_CS" ]]
+        shell: bash
+
+      # Test 3
+      - name: Slugify key/value
+        uses: ./
+        with:
+          key: KEY_VALUE
+          value: "Never gonna give you up Never gonna let you down"
+      - name: Validate // Slugify key/value
+        env:
+          ENV_KEY_VALUE: ${{ env.KEY_VALUE }}
+          ENV_KEY_VALUE_SLUG: ${{ env.KEY_VALUE_SLUG }}
+          ENV_KEY_VALUE_SLUG_CS: ${{ env.KEY_VALUE_SLUG_CS }}
+          ENV_KEY_VALUE_SLUG_URL: ${{ env.KEY_VALUE_SLUG_URL }}
+          ENV_KEY_VALUE_SLUG_URL_CS: ${{ env.KEY_VALUE_SLUG_URL_CS }}
+        run: |
+          [[ "$ENV_KEY_VALUE" == "Never gonna give you up Never gonna let you down" ]]
+          [[ "$ENV_KEY_VALUE_SLUG" == "never-gonna-give-you-up-never-gonna-let-you-down" ]]
+          [[ "$ENV_KEY_VALUE_SLUG_CS" == "Never-gonna-give-you-up-Never-gonna-let-you-down" ]]
+          [[ "$ENV_KEY_VALUE_SLUG_URL" == "never-gonna-give-you-up-never-gonna-let-you-down" ]]
+          [[ "$ENV_KEY_VALUE_SLUG_URL_CS" == "Never-gonna-give-you-up-Never-gonna-let-you-down" ]]
+        shell: bash
+
+      # Test 4
+      - name: Slugify with another max length
+        uses: ./
+        with:
+          key: ANOTHER_MAX_LENGTH
+          value: "Never gonna give you up Never gonna let you down"
+          slug-maxlength: 24
+      - name: Validate // Slugify with another max length
+        env:
+          ENV_ANOTHER_MAX_LENGTH: ${{ env.ANOTHER_MAX_LENGTH }}
+          ENV_ANOTHER_MAX_LENGTH_SLUG: ${{ env.ANOTHER_MAX_LENGTH_SLUG }}
+          ENV_ANOTHER_MAX_LENGTH_SLUG_CS: ${{ env.ANOTHER_MAX_LENGTH_SLUG_CS }}
+          ENV_ANOTHER_MAX_LENGTH_SLUG_URL: ${{ env.ANOTHER_MAX_LENGTH_SLUG_URL }}
+          ENV_ANOTHER_MAX_LENGTH_SLUG_URL_CS: ${{ env.ANOTHER_MAX_LENGTH_SLUG_URL_CS }}
+        run: |
+          [[ "$ENV_ANOTHER_MAX_LENGTH" == "Never gonna give you up Never gonna let you down" ]]
+          [[ "$ENV_ANOTHER_MAX_LENGTH_SLUG" == "never-gonna-give-you-up" ]]
+          [[ "$ENV_ANOTHER_MAX_LENGTH_SLUG_CS" == "Never-gonna-give-you-up" ]]
+          [[ "$ENV_ANOTHER_MAX_LENGTH_SLUG_URL" == "never-gonna-give-you-up" ]]
+          [[ "$ENV_ANOTHER_MAX_LENGTH_SLUG_URL_CS" == "Never-gonna-give-you-up" ]]
+        shell: bash
+
+      # Test 5
+      - name: Slugify with no limit on max length
+        uses: ./
+        with:
+          key: NO_MAX_LENGTH
+          value: "Never gonna give you up Never gonna let you down Never gonna run around and desert you Never gonna make you cry Never gonna say goodbye Never gonna tell a lie and hurt you"
+          slug-maxlength: "nolimit"
+      - name: Validate // Slugify with no limit on max length
+        env:
+          ENV_NO_MAX_LENGTH: ${{ env.NO_MAX_LENGTH }}
+          ENV_NO_MAX_LENGTH_SLUG: ${{ env.NO_MAX_LENGTH_SLUG }}
+          ENV_NO_MAX_LENGTH_SLUG_CS: ${{ env.NO_MAX_LENGTH_SLUG_CS }}
+          ENV_NO_MAX_LENGTH_SLUG_URL: ${{ env.NO_MAX_LENGTH_SLUG_URL }}
+          ENV_NO_MAX_LENGTH_SLUG_URL_CS: ${{ env.NO_MAX_LENGTH_SLUG_URL_CS }}
+        run: |
+          [[ "$ENV_NO_MAX_LENGTH" == "Never gonna give you up Never gonna let you down Never gonna run around and desert you Never gonna make you cry Never gonna say goodbye Never gonna tell a lie and hurt you" ]]
+          [[ "$ENV_NO_MAX_LENGTH_SLUG" == "never-gonna-give-you-up-never-gonna-let-you-down-never-gonna-run-around-and-desert-you-never-gonna-make-you-cry-never-gonna-say-goodbye-never-gonna-tell-a-lie-and-hurt-you" ]]
+          [[ "$ENV_NO_MAX_LENGTH_SLUG_CS" == "Never-gonna-give-you-up-Never-gonna-let-you-down-Never-gonna-run-around-and-desert-you-Never-gonna-make-you-cry-Never-gonna-say-goodbye-Never-gonna-tell-a-lie-and-hurt-you" ]]
+          [[ "$ENV_NO_MAX_LENGTH_SLUG_URL" == "never-gonna-give-you-up-never-gonna-let-you-down-never-gonna-run-around-and-desert-you-never-gonna-make-you-cry-never-gonna-say-goodbye-never-gonna-tell-a-lie-and-hurt-you" ]]
+          [[ "$ENV_NO_MAX_LENGTH_SLUG_URL_CS" == "Never-gonna-give-you-up-Never-gonna-let-you-down-Never-gonna-run-around-and-desert-you-Never-gonna-make-you-cry-Never-gonna-say-goodbye-Never-gonna-tell-a-lie-and-hurt-you" ]]
+        shell: bash
+
+      # Test 6
+      - name: Slugify with empty max length
+        id: slugify-with-empty-max-length
+        uses: ./
+        with:
+          key: EMPTY_MAXLENGTH
+          value: some_value
+          slug-maxlength: ""
+        continue-on-error: true
+      - name: Validate // Slugify with empty max length
+        env:
+          ENV_EMPTY_MAXLENGTH: ${{ env.EMPTY_MAXLENGTH }}
+          ENV_EMPTY_MAXLENGTH_SLUG: ${{ env.EMPTY_MAXLENGTH_SLUG }}
+          ENV_EMPTY_MAXLENGTH_SLUG_CS: ${{ env.EMPTY_MAXLENGTH_SLUG_CS }}
+          ENV_EMPTY_MAXLENGTH_SLUG_URL: ${{ env.EMPTY_MAXLENGTH_SLUG_URL }}
+          ENV_EMPTY_MAXLENGTH_SLUG_URL_CS: ${{ env.EMPTY_MAXLENGTH_SLUG_URL_CS }}
+          STEP_OUTCOME: ${{ steps.slugify-with-empty-max-length.outcome }}
+          STEP_CONCLUSION: ${{ steps.slugify-with-empty-max-length.conclusion }}
+        run: |
+          [[ -z "$ENV_EMPTY_MAXLENGTH" ]]
+          [[ -z "$ENV_EMPTY_MAXLENGTH_SLUG" ]]
+          [[ -z "$ENV_EMPTY_MAXLENGTH_SLUG_CS" ]]
+          [[ -z "$ENV_EMPTY_MAXLENGTH_SLUG_URL" ]]
+          [[ -z "$ENV_EMPTY_MAXLENGTH_SLUG_URL_CS" ]]
+          [[ "$STEP_OUTCOME" == "failure" ]]
+          [[ "$STEP_CONCLUSION" == "success" ]]
+        shell: bash
+
+      # Test 7
+      - name: Slugify with wrong max length
+        id: slugify-with-wrong-max-length
+        uses: ./
+        with:
+          key: WRONG_MAXLENGTH
+          value: some_value
+          slug-maxlength: "wrong"
+        continue-on-error: true
+      - name: Validate // Slugify with wrong max length
+        env:
+          ENV_WRONG_MAXLENGTH: ${{ env.WRONG_MAXLENGTH }}
+          ENV_WRONG_MAXLENGTH_SLUG: ${{ env.WRONG_MAXLENGTH_SLUG }}
+          ENV_WRONG_MAXLENGTH_SLUG_CS: ${{ env.WRONG_MAXLENGTH_SLUG_CS }}
+          ENV_WRONG_MAXLENGTH_SLUG_URL: ${{ env.WRONG_MAXLENGTH_SLUG_URL }}
+          ENV_WRONG_MAXLENGTH_SLUG_URL_CS: ${{ env.WRONG_MAXLENGTH_SLUG_URL_CS }}
+          STEP_OUTCOME: ${{ steps.slugify-with-wrong-max-length.outcome }}
+          STEP_CONCLUSION: ${{ steps.slugify-with-wrong-max-length.conclusion }}
+        run: |
+          [[ -z "$ENV_WRONG_MAXLENGTH" ]]
+          [[ -z "$ENV_WRONG_MAXLENGTH_SLUG" ]]
+          [[ -z "$ENV_WRONG_MAXLENGTH_SLUG_CS" ]]
+          [[ -z "$ENV_WRONG_MAXLENGTH_SLUG_URL" ]]
+          [[ -z "$ENV_WRONG_MAXLENGTH_SLUG_URL_CS" ]]
+          [[ "$STEP_OUTCOME" == "failure" ]]
+          [[ "$STEP_CONCLUSION" == "success" ]]
+        shell: bash
+
+      # Test 8
+      - name: Slugify key without env publication
+        id: slugify-key-without-env-publication
+        uses: ./
+        with:
+          key: KEY_WITHOUT_ENV_PUBLICATION
+          publish-env: false
+        env:
+          KEY_WITHOUT_ENV_PUBLICATION: "Never gonna give you up"
+      - name: Validate // Slugify key without env publication
+        env:
+          ENV_KEY_WITHOUT_ENV_PUBLICATION: ${{ env.KEY_WITHOUT_ENV_PUBLICATION }}
+          ENV_KEY_WITHOUT_ENV_PUBLICATION_SLUG: ${{ env.KEY_WITHOUT_ENV_PUBLICATION_SLUG }}
+          ENV_KEY_WITHOUT_ENV_PUBLICATION_SLUG_CS: ${{ env.KEY_WITHOUT_ENV_PUBLICATION_SLUG_CS }}
+          ENV_KEY_WITHOUT_ENV_PUBLICATION_SLUG_URL: ${{ env.KEY_WITHOUT_ENV_PUBLICATION_SLUG_URL }}
+          ENV_KEY_WITHOUT_ENV_PUBLICATION_SLUG_URL_CS: ${{ env.KEY_WITHOUT_ENV_PUBLICATION_SLUG_URL_CS }}
+          OUT_VALUE: ${{ steps.slugify-key-without-env-publication.outputs.value }}
+          OUT_SLUG: ${{ steps.slugify-key-without-env-publication.outputs.slug }}
+          OUT_SLUG_CS: ${{ steps.slugify-key-without-env-publication.outputs.slug-cs }}
+          OUT_SLUG_URL: ${{ steps.slugify-key-without-env-publication.outputs.slug-url }}
+          OUT_SLUG_URL_CS: ${{ steps.slugify-key-without-env-publication.outputs.slug-url-cs }}
+        run: |
+          [[ -z "$ENV_KEY_WITHOUT_ENV_PUBLICATION" ]]
+          [[ -z "$ENV_KEY_WITHOUT_ENV_PUBLICATION_SLUG" ]]
+          [[ -z "$ENV_KEY_WITHOUT_ENV_PUBLICATION_SLUG_CS" ]]
+          [[ -z "$ENV_KEY_WITHOUT_ENV_PUBLICATION_SLUG_URL" ]]
+          [[ -z "$ENV_KEY_WITHOUT_ENV_PUBLICATION_SLUG_URL_CS" ]]
+          [[ "$OUT_VALUE" == "Never gonna give you up" ]]
+          [[ "$OUT_SLUG" == "never-gonna-give-you-up" ]]
+          [[ "$OUT_SLUG_CS" == "Never-gonna-give-you-up" ]]
+          [[ "$OUT_SLUG_URL" == "never-gonna-give-you-up" ]]
+          [[ "$OUT_SLUG_URL_CS" == "Never-gonna-give-you-up" ]]
+        shell: bash
+
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: release-${{ github.ref }}
+    needs:
+      - os-testing
+    steps:
+      - name: Checkout
+        uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3
+
+      # Release
+      - name: Release this GitHub Action
+        uses: rlespinasse/release-that@f4912d4053839003bb368e9c7067b071ccb1c146 # v1

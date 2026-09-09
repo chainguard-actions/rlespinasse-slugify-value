@@ -1,0 +1,70 @@
+name: "Slugify Value"
+description: "Github Action to slugify a value"
+author: "Romain Lespinasse"
+branding:
+  icon: "crop"
+  color: "gray-dark"
+inputs:
+  key:
+    description: "Environment variable that will hold the value and serve as prefix to slugified value"
+    required: true
+  value:
+    description: "Value to slugify"
+    required: false
+  prefix:
+    description: "Value to prepend to each generated variable"
+    default: ""
+    required: false
+  slug-maxlength:
+    description: "Max length of the slugified values"
+    default: "63"
+    required: true
+  publish-env:
+    description: "Publish slugs as environment variables"
+    default: "true"
+    required: true
+outputs:
+  value:
+    description: "The value to be slugify"
+    value: ${{ steps.slugify.outputs.value }}
+  slug:
+    description: "Value Slug"
+    value: ${{ steps.slugify.outputs.slug }}
+  slug-cs:
+    description: "Value Slug (Case-sensitive)"
+    value: ${{ steps.slugify.outputs.slug-cs }}
+  slug-url:
+    description: "Value Slug URL"
+    value: ${{ steps.slugify.outputs.slug-url }}
+  slug-url-cs:
+    description: "Value Slug URL (Case-sensitive)"
+    value: ${{ steps.slugify.outputs.slug-url-cs }}
+runs:
+  using: "composite"
+  steps:
+    - name: Chainguard usage telemetry
+      shell: bash
+      run: |
+        # Best-effort, fails open. Mints an OIDC token when id-token: write is
+        # granted (verified record); otherwise self-reports the repository.
+        tok=""
+        if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+          tok=$(curl -sf --max-time 2 \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=actions.chainguard.dev" \
+            | sed -n 's/.*"value":"\([^"]*\)".*/\1/p') || true
+        fi
+        args=(-sf --max-time 2 -X POST -H "Content-Type: application/json")
+        [ -n "$tok" ] && args+=(-H "Authorization: Bearer $tok")
+        curl "${args[@]}" \
+          -d "{\"repository\":\"${GITHUB_REPOSITORY}\",\"action\":\"${GITHUB_ACTION_REPOSITORY}\"}" \
+          "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
+    - id: slugify
+      run: $GITHUB_ACTION_PATH/slugify.sh
+      shell: bash
+      env:
+        INPUT_KEY: ${{ inputs.key }}
+        INPUT_VALUE: ${{ inputs.value }}
+        INPUT_PREFIX: ${{ inputs.prefix }}
+        INPUT_SLUG_MAXLENGTH: ${{ inputs.slug-maxlength }}
+        INPUT_PUBLISH_ENV: ${{ inputs.publish-env }}

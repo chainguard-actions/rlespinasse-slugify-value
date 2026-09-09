@@ -1,0 +1,25 @@
+name: Test slug with nolimit max length
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: LONG_VALUE
+          value: "this-is-a-very-long-string-that-should-not-be-truncated-at-all-when-nolimit-is-set"
+          slug-maxlength: "nolimit"
+      - name: Assert slug is not truncated
+        env:
+          ACTUAL: ${{ steps.action.outputs.slug }}
+        run: |
+          echo "actual slug: $ACTUAL"
+          EXPECTED="this-is-a-very-long-string-that-should-not-be-truncated-at-all-when-nolimit-is-set"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: slug not truncated with nolimit"

@@ -1,0 +1,35 @@
+name: Test prefix for environment variable names
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          key: BRANCH
+          value: "my-feature"
+          prefix: "CUSTOM_"
+      - name: Assert prefixed env vars are published
+        run: |
+          echo "CUSTOM_BRANCH=$CUSTOM_BRANCH"
+          echo "CUSTOM_BRANCH_SLUG=$CUSTOM_BRANCH_SLUG"
+          if [ "$CUSTOM_BRANCH" != "my-feature" ]; then
+            echo "FAIL: expected CUSTOM_BRANCH='my-feature' but got '$CUSTOM_BRANCH'"
+            exit 1
+          fi
+          if [ "$CUSTOM_BRANCH_SLUG" != "my-feature" ]; then
+            echo "FAIL: expected CUSTOM_BRANCH_SLUG='my-feature' but got '$CUSTOM_BRANCH_SLUG'"
+            exit 1
+          fi
+          echo "PASS: prefixed env vars published correctly"
+      - name: Assert non-prefixed env vars are NOT set
+        run: |
+          echo "BRANCH=$BRANCH"
+          if [ -n "$BRANCH" ]; then
+            echo "FAIL: expected BRANCH to be unset but got '$BRANCH'"
+            exit 1
+          fi
+          echo "PASS: non-prefixed env var not set"
