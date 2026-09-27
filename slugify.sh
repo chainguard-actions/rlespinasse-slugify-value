@@ -57,15 +57,17 @@ SLUG_CS_VALUE=$(slug "$CS_VALUE")
 SLUG_URL_VALUE=$(slug_url "$VALUE")
 SLUG_URL_CS_VALUE=$(slug_url "$CS_VALUE")
 
-# Sanitize all user-controlled values before writing to GITHUB_OUTPUT / GITHUB_ENV
-# to prevent newline injection attacks.
-SAFE_CS_VALUE=$(printf '%s' "$CS_VALUE" | tr -d '\n\r')
-SAFE_SLUG_VALUE=$(printf '%s' "$SLUG_VALUE" | tr -d '\n\r')
-SAFE_SLUG_CS_VALUE=$(printf '%s' "$SLUG_CS_VALUE" | tr -d '\n\r')
-SAFE_SLUG_URL_VALUE=$(printf '%s' "$SLUG_URL_VALUE" | tr -d '\n\r')
-SAFE_SLUG_URL_CS_VALUE=$(printf '%s' "$SLUG_URL_CS_VALUE" | tr -d '\n\r')
-SAFE_PREFIX=$(printf '%s' "$PREFIX" | tr -d '\n\r')
-SAFE_KEY=$(printf '%s' "$KEY" | tr -d '\n\r')
+sanitize() {
+  printf '%s' "$1" | tr -d '\n\r'
+}
+
+SAFE_CS_VALUE=$(sanitize "$CS_VALUE")
+SAFE_SLUG_VALUE=$(sanitize "$SLUG_VALUE")
+SAFE_SLUG_CS_VALUE=$(sanitize "$SLUG_CS_VALUE")
+SAFE_SLUG_URL_VALUE=$(sanitize "$SLUG_URL_VALUE")
+SAFE_SLUG_URL_CS_VALUE=$(sanitize "$SLUG_URL_CS_VALUE")
+SAFE_PREFIX=$(sanitize "$PREFIX")
+SAFE_KEY=$(sanitize "$KEY")
 
 if [ -f "$GITHUB_OUTPUT" ]; then
   {

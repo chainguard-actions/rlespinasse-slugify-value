@@ -10,67 +10,34 @@
 
 **Harden Agent Version:** `2`
 
-Action **rlespinasse--slugify-value/v1.4.0** was hardened automatically. 4 finding(s) were identified and resolved across 1 iteration(s).
+Action **rlespinasse--slugify-value/v1.4.0** was hardened automatically. 1 finding(s) were identified and resolved across 1 iteration(s).
 
 ## Findings Fixed
 
 ### github-env-injection (severity: high)
 
-slugify.sh writes user-controlled values to $GITHUB_OUTPUT and $GITHUB_ENV without sanitization. The variables CS_VALUE, SLUG_VALUE, SLUG_CS_VALUE, SLUG_URL_VALUE, and SLUG_URL_CS_VALUE are all derived from INPUT_VALUE and INPUT_KEY (which come from inputs.value and inputs.key via the action's env: block). An attacker can embed newline characters in these inputs to inject arbitrary key=value pairs into the runner's environment or output context. No `printf '%s' ... | tr -d '\n\r'` sanitization is applied before any of these writes.
+slugify.sh writes values derived from untrusted inputs directly to $GITHUB_OUTPUT and $GITHUB_ENV without the required sanitization step (`printf '%s' ... | tr -d '\n\r'`). The env vars INPUT_VALUE, INPUT_KEY, and INPUT_PREFIX are set from `${{ inputs.value }}`, `${{ inputs.key }}`, and `${{ inputs.prefix }}` respectively in action.yml. In slugify.sh, CS_VALUE (from INPUT_VALUE), KEY (from INPUT_KEY), PREFIX (from INPUT_PREFIX), and their slugified derivatives are written unsanitized to $GITHUB_OUTPUT (e.g. `echo "value=${CS_VALUE}" >> "$GITHUB_OUTPUT"`) and to $GITHUB_ENV (e.g. `echo "${PREFIX}${KEY}=${CS_VALUE}" >> "$GITHUB_ENV"`). A newline character in any of these inputs could allow injection of arbitrary environment variables or output values.
 
 Locations:
 
-- `slugify.sh:48`
-- `slugify.sh:62`
-
-### script-injection (severity: high)
-
-Multiple run: blocks in the workflow directly interpolate ${{ env.* }}, ${{ steps.*.outputs.* }}, and ${{ steps.*.outcome }} expressions inside shell commands (e.g., `[[ "${{ env.KEY_ONLY }}" == ... ]]`). These expressions are substituted by the GitHub Actions YAML template engine before the shell parses the command, allowing any workflow-controllable value to inject shell metacharacters. All validate steps across Tests 1–8 are affected.
-
-Locations:
-
-- `.github/workflows/slugify-value.yaml:24`
-- `.github/workflows/slugify-value.yaml:37`
-- `.github/workflows/slugify-value.yaml:51`
-- `.github/workflows/slugify-value.yaml:64`
-- `.github/workflows/slugify-value.yaml:78`
-- `.github/workflows/slugify-value.yaml:96`
-- `.github/workflows/slugify-value.yaml:113`
-- `.github/workflows/slugify-value.yaml:130`
-
-### missing-permissions (severity: medium)
-
-The workflow file .github/workflows/slugify-value.yaml has no top-level permissions: key, and neither the os-testing job nor the release job defines a job-level permissions: block. This means the workflow runs with the default (potentially broad) GITHUB_TOKEN permissions.
-
-Locations:
-
-- `.github/workflows/slugify-value.yaml:1`
-
-### unpinned-uses (severity: high)
-
-The workflow uses action references pinned to mutable tags rather than immutable full-length SHA digests, making the workflow vulnerable to supply-chain attacks if the tag is moved: `actions/checkout@v3` (used twice) and `rlespinasse/release-that@v1`.
-
-Locations:
-
-- `.github/workflows/slugify-value.yaml:15`
-- `.github/workflows/slugify-value.yaml:136`
-- `.github/workflows/slugify-value.yaml:139`
+- `slugify.sh:57`
+- `slugify.sh:58`
+- `slugify.sh:59`
+- `slugify.sh:60`
+- `slugify.sh:61`
+- `slugify.sh:70`
+- `slugify.sh:71`
+- `slugify.sh:72`
+- `slugify.sh:73`
+- `slugify.sh:74`
 
 ## Iteration Notes
 
 ### Iteration 1
 
-**Fixes applied:** github-env-injection, script-injection, missing-permissions, unpinned-uses
+**Fixes applied:** github-env-injection
 
 **Notes:**
 
-Fixed all four findings:
-
-1. **github-env-injection** (slugify.sh lines 48, 62): Added `printf '%s' "$VAR" | tr -d '\n\r'` sanitization for all user-controlled values (CS_VALUE, SLUG_VALUE, SLUG_CS_VALUE, SLUG_URL_VALUE, SLUG_URL_CS_VALUE, PREFIX, KEY) before writing to $GITHUB_OUTPUT and $GITHUB_ENV. Safe versions stored in SAFE_* variables.
-
-2. **script-injection** (.github/workflows/slugify-value.yaml, 8 locations): Moved all `${{ env.* }}`, `${{ steps.*.outputs.* }}`, and `${{ steps.*.outcome/conclusion }}` expressions from `run:` shell scripts into `env:` blocks for each validate step. Shell scripts now reference plain environment variables.
-
-3. **missing-permissions** (.github/workflows/slugify-value.yaml line 1): Added `permissions: {}` at the top level, `permissions: contents: read` for the os-testing job, and `permissions: contents: write` for the release job.
-
-4. **unpinned-uses** (.github/workflows/slugify-value.yaml lines 15, 136, 139): Pinned `actions/checkout@v3` → `@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3` (both occurrences) and `rlespinasse/release-that@v1` → `@f4912d4053839003bb368e9c7067b071ccb1c146 # v1`.
+Added a `sanitize()` helper function in slugify.sh that strips newline and carriage return characters using `printf '%s' "$1" | tr -d '\n\r'`. Applied it to all values derived from user inputs (CS_VALUE, SLUG_VALUE, SLUG_CS_VALUE, SLUG_URL_VALUE, SLUG_URL_CS_VALUE, PREFIX, KEY) before writing to $GITHUB_OUTPUT and $GITHUB_ENV. The sanitized versions (SAFE_*) are used in all echo statements that write to these files, preventing newline injection attacks.
 
